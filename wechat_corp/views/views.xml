@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!--企业微信用户列表-->
+        <record model="ir.ui.view" id="wechat_corp_users_tree_view">
+            <field name="name">wechat_corp_users.view</field>
+            <field name="model">wechat.corp.users</field>
+            <field name="arch" type="xml">
+                <tree string='企业微信用户'>
+                    <field name="name"/>
+                    <field name="userid"/>
+                    <field name="gender"/>
+                    <field name="mobile"/>
+                    <field name="email"/>
+                    <field name="position"/>
+                    <field name="status"/>
+                    <field name="avatar"/>
+                </tree>
+            </field>
+        </record>
+
+        <!--企业微信用户表单-->
+        <record model="ir.ui.view" id="wechat_corp_users_view_form">
+			<field name="name">wechat.corp.users.form</field>
+			<field name="model">wechat.corp.users</field>
+			<field name="type">form</field>
+			<field name="arch" type="xml">
+			 	<form string="企业微信用户">
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name='name'/>
+                                <field name='userid' attrs="{'readonly': [('create_date', '!=', False)]}"/>
+                                <field name='create_date' invisible="1"/>
+                            </group>
+                            <group>
+                                <field name='mobile'/>
+                                <field name='email'/>
+                            </group>
+                            <group>
+                                <field name='position'/>
+                                <field name='gender'/>
+                            </group>
+                        </group>
+			 	    </sheet>
+			 	</form>
+			</field>
+		</record>
+
+        <!--企业微信配置表单-->
+        <record model="ir.ui.view" id="wechat_corp_config_form_view">
+            <field name="name">wechat.corp.config.form</field>
+            <field name="model">wechat.corp.config</field>
+            <field name="arch" type="xml">
+                <form string="企业微信配置">
+                    <sheet>
+                        <group>
+                            <group string="开发者配置">
+                                <field name="corp_id"/>
+                                <field name="corp_agent"/>
+                                <field name="corp_agent_secret"/>
+                                <field name="corp_secret"/>
+                            </group>
+                            <!--<group string="接收消息服务器配置">-->
+                            <!--</group>-->
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+
+        <!--企业微信户列表头部-->
+        <record model="ir.actions.act_window" id="wechat_corp_users_list_action">
+            <field name="name">企业微信用户</field>
+            <field name="res_model">wechat.corp.users</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+		<record id="wechat_corp_config_form_action" model="ir.actions.act_window">
+			<field name="name">企业微信配置</field>
+			<field name="res_model">wechat.corp.config</field>
+			<field name="view_type">form</field>
+			<field name="view_mode">form</field>
+			<field name="target">main</field>
+			<field name="res_id">1</field> <!--打开id为1记录-->
+		</record>
+
+		<record id="sync_users" model="ir.actions.server">
+			<field name="name">一键同步并关联</field>
+			<field name="condition">True</field>
+			<field name="type">ir.actions.server</field>
+			<field name="model_id" ref="model_wechat_corp_users"></field>
+			<field name="state">code</field>
+			<field name="code">env['wechat.corp.users'].sync_users()</field>
+		</record>
+
+        <menuitem id="main_wechat_corp_menu" name="企业微信"/>
+        <menuitem id="wechat_corp_userstag_menu" name="用户与标签" parent="main_wechat_corp_menu"/>
+        <menuitem id="wechat_corp_menu" name="设置" parent="main_wechat_corp_menu"/>
+        <menuitem id="wechat_corp_config_menu" name="企业微信配置" parent="wechat_corp_menu" action="wechat_corp_config_form_action"/>
+        <menuitem id="wechat_corp_users_menu" name="企业微信用户" parent="wechat_corp_userstag_menu" action="wechat_corp_users_list_action"/>
+        <menuitem id="sync_users_menu" name="一键同步并关联" parent="wechat_corp_userstag_menu" action="sync_users"/>
+    </data>
+</odoo>

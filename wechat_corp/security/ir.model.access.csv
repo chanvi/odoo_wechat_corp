@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_wechat_wechat,wechat.wechat,model_wechat_corp_config,,1,1,0,1

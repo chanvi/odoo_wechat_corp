@@ -1,0 +1,7 @@
+<odoo>
+    <data>
+        <record model="wechat.corp.config" id="config1">
+            <field name="first">1</field>
+        </record>
+    </data>
+</odoo>
