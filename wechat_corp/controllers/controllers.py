@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+# @Author Chanvi
+# @Version 1.0
+# github: https://github.com/chanvi/odoo_wechat_corp
+
 from odoo import http, api, SUPERUSER_ID
 
 from odoo.http import request

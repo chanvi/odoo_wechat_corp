@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+# @Author Chanvi
+# @Version 1.0
+# github: https://github.com/chanvi/odoo_wechat_corp
+
 from odoo import models, fields, api
 
 class Inherit_res_users(models.Model):

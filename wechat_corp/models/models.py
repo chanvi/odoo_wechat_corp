@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+# @Author Chanvi
+# @Version 1.0
+# github: https://github.com/chanvi/odoo_wechat_corp
 
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
@@ -21,7 +24,7 @@ class wechat_corp_config(models.Model):
 
     @api.onchange('corp_id', 'corp_agent', 'corp_agent_secret', 'corp_secret')
     def _onchange_filter_spaces(self):
-        '''过滤首尾空格'''
+        """过滤首尾空格"""
         self.corp_id = self.corp_id.strip() if self.corp_id else ''
         self.corp_agent = self.corp_agent.strip() if self.corp_agent else ''
         self.corp_agent_secret = self.corp_agent_secret.strip() if self.corp_agent_secret else ''
@@ -49,7 +52,7 @@ class wechat_corp_users(models.Model):
 
     @api.model
     def create(self, values, only_create=0):
-        '''创建时同步到企业微信'''
+        """创建时同步到企业微信"""
         if not (values.get('mobile') or values.get('email') ):
             raise ValidationError(u'手机和邮箱不能同时为空')
 
@@ -70,7 +73,7 @@ class wechat_corp_users(models.Model):
 
     @api.multi
     def unlink(self):
-        '''删除用户同步到企业微信'''
+        """删除用户同步到企业微信"""
         config = self.env['wechat.corp.config'].browse(1)
         for rec in self:
             try:
@@ -84,7 +87,7 @@ class wechat_corp_users(models.Model):
 
     @api.multi
     def write(self, values):
-        '''编辑用户同步到企业微信'''
+        """编辑用户同步到企业微信"""
         res = super(wechat_corp_users, self).write(values)
         if not (self.mobile or self.email):
             raise ValidationError('手机和邮箱不能同时为空')
@@ -100,7 +103,7 @@ class wechat_corp_users(models.Model):
 
     @api.model
     def sync_users(self):
-        '''一键同步：先从企业微信上把用户同步下来，再从系统用户以增量方式同步到企业微信'''
+        """一键同步：先从企业微信上把用户同步下来，再从系统用户以增量方式同步到企业微信"""
         # 从企业微信同步用户
         config = self.env['wechat.corp.config'].browse(1)
         if not (config.corp_id and config.corp_secret):
@@ -217,3 +220,93 @@ class wxcorp_messages(models.Model):
 class wechat_corp_totag(models.Model):
     _name = 'wechat.corp.totag'
     _description = u'标签'
+    _rec_name = 'tagname'
+
+    tagname = fields.Char(u'标签名称', required = True)
+    tagid = fields.Char(u'标签ID')
+    userlist_ids = fields.Many2many('wechat.corp.users', string="用户列表")
+
+    _sql_constraints = [
+        ('tagname_key', 'UNIQUE (tagname)',  '标签名已存在 !')
+    ]
+
+    @api.model
+    def create(self, values):
+        """创建标签时同步到企业微信"""
+        # 添加标签到企业微信
+        config = self.env['wechat.corp.config'].browse(1)
+        if not (config.corp_id and config.corp_secret):
+            raise odoo.osv.osv.except_osv(u'未配置', u'请先配置企业微信！')
+        try:
+            wxapi = CorpApi(config.corp_id, config.corp_secret)
+            response = wxapi.httpCall(CORP_API_TYPE['TAG_CREATE'],values)
+            values['tagid'] = response['tagid']
+        except ApiException as e:
+            raise ValidationError(u'请求企业微信服务器异常: %s 异常信息: %s' % (e.errCode, e.errMsg))
+        # 执行原create逻辑
+        return super(wechat_corp_totag, self).create(values)
+
+    @api.multi
+    def unlink(self):
+        '''删除标签同步到企业微信'''
+        config = self.env['wechat.corp.config'].browse(1)
+        for rec in self:
+            try:
+                wxapi = CorpApi(config.corp_id, config.corp_secret)
+                wxapi.httpCall(CORP_API_TYPE['TAG_DELETE'], {'tagid' : rec.tagid})
+            except ApiException as e:
+                raise ValidationError(u'请求企业微信服务器异常: %s 异常信息: %s' % (e.errCode, e.errMsg))
+        # 执行原unlink逻辑
+        return super(wechat_corp_totag, self).unlink()
+
+    @api.multi
+    def write(self, values):
+        '''
+        编辑标签同步到企业微信
+        添加标签所属用户
+        '''
+        # res = super(wechat_corp_totag, self).write(values)
+
+        config = self.env['wechat.corp.config'].browse(1)
+        wxapi = CorpApi(config.corp_id, config.corp_secret)
+        values['tagid'] = self.tagid    # 隐藏的字段并不会传值
+        # 修改标签名
+        if values.get('tagname') and values.get('tagid'):
+            try:
+                response = wxapi.httpCall(CORP_API_TYPE['TAG_UPDATE'], values)
+            except ApiException as e:
+                raise ValidationError(u'请求企业微信服务器异常: %s 异常信息: %s' % (e.errCode, e.errMsg))
+
+        # 编辑用户列表
+        # 先清除标签已有的用户成员
+        if self.userlist_ids:
+            userlist = []
+            for rec in self.userlist_ids:
+                userlist.append(rec.userid)
+            values['userlist'] = userlist
+
+            try:
+                response = wxapi.httpCall(CORP_API_TYPE['TAG_DELETE_USER'], values)
+            except ApiException as e:
+                raise ValidationError(u'请求企业微信服务器异常: %s 异常信息: %s' % (e.errCode, e.errMsg))
+
+        # 添加用户到标签
+        if values.get('userlist_ids'):
+            user_id_list = values.get('userlist_ids')[0][2]
+
+            if user_id_list:
+                wechat_corp_users = self.env['wechat.corp.users'].search([('id', 'in', user_id_list)])
+                userlist = []
+                for rec in wechat_corp_users:
+                    userlist.append(rec.userid)
+                values['userlist'] = userlist
+                try:
+                    wxapi.httpCall(CORP_API_TYPE['TAG_ADD_USER'], values)
+                except ApiException as e:
+                    raise ValidationError(u'请求企业微信服务器异常: %s 异常信息: %s' % (e.errCode, e.errMsg))
+
+
+
+
+
+        return super(wechat_corp_totag, self).write(values)
