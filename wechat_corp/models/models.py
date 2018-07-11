@@ -186,11 +186,12 @@ class wxcorp_messages(models.Model):
     content = fields.Text('消息内容')
 
     @api.model
-    def send(self, touser='', totag='@all', content=''):
+    def send(self, touser='', totag='', content=''):
         content = content.replace('"',"'")
         config = self.env['wechat.corp.config'].browse(1)
         if not (config.corp_id and config.corp_agent_secret and config.corp_agent):
             raise odoo.osv.osv.except_osv(u'发送消息失败', u'请先配置好企业微信！')
+
         wxapi = CorpApi(config.corp_id, config.corp_agent_secret)
         try:
             response = wxapi.httpCall(
@@ -304,9 +305,5 @@ class wechat_corp_totag(models.Model):
                     wxapi.httpCall(CORP_API_TYPE['TAG_ADD_USER'], values)
                 except ApiException as e:
                     raise ValidationError(u'请求企业微信服务器异常: %s 异常信息: %s' % (e.errCode, e.errMsg))
-
-
-
-
 
         return super(wechat_corp_totag, self).write(values)
