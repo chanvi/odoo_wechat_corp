@@ -1,6 +1,7 @@
 ## 简述
 Odoo 企业微信应用对接模块，实现Oauth2网页授权登录，自定义odoo业务消息推送。
 for odoo10, odoo11
+
 ## 特性
 1. oauth登录与odoo用户登陆互不影响。
 2. 无需安装额外python模块依赖，开箱即用。
