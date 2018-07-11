@@ -16,4 +16,4 @@ Odoo 企业微信应用对接模块，实现Oauth2网页授权登录，自定义
 ```
     self.env['wxcorp.messages'].send(touser='admin', content='你有条新消息')
 ```
-6. 详细参考：详细说明.docx
+6. 详细参考：[详细说明.docx](https://github.com/chanvi/odoo_wechat_corp/blob/master/%E8%AF%A6%E7%BB%86%E8%AF%B4%E6%98%8E.docx)
