@@ -14,11 +14,6 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-def set_cookie_and_redirect(redirect_url):
-    redirect = werkzeug.utils.redirect(redirect_url, 303)
-    redirect.autocorrect_location_header = False
-    return redirect
-
 class Wechat(http.Controller):
     @http.route('/wechat/open/', auth='public')
     def open(self):
@@ -37,7 +32,7 @@ class Wechat(http.Controller):
                 _logger.exception("open: %s" % str(e))
                 url = "/web/login?oauth_error=2"
 
-        return set_cookie_and_redirect(url)
+        return self.set_cookie_and_redirect(url)
 
     @http.route('/wechat/wechat/', auth='public')
     def oauth(self, **kw):
@@ -91,4 +86,10 @@ class Wechat(http.Controller):
                 url = '/web/login?oauth_error=2'
         else:
             url = '/web/login?oauth_error=2'
-        return set_cookie_and_redirect(url)
+        return self.set_cookie_and_redirect(url)
+
+    def set_cookie_and_redirect(self, redirect_url):
+        '''跳转处理'''
+        redirect = werkzeug.utils.redirect(redirect_url, 303)
+        redirect.autocorrect_location_header = False
+        return redirect
