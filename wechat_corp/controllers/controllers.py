@@ -17,7 +17,7 @@ _logger = logging.getLogger(__name__)
 class Wechat(http.Controller):
     @http.route('/wechat/open/', auth='public')
     def open(self):
-        '''oauth_url'''
+        '''企业微信oauth_url'''
         dbname = request.session.db
         registry = registry_get(dbname)
         with registry.cursor() as cr:
@@ -36,7 +36,7 @@ class Wechat(http.Controller):
 
     @http.route('/wechat/wechat/', auth='public')
     def oauth(self, **kw):
-        '''oauth验证'''
+        '''企业微信oauth验证'''
         code = request.params.get('code')
 
         dbname = request.session.db
@@ -71,8 +71,10 @@ class Wechat(http.Controller):
                             res_users_id = env['res.users'].sudo().search([('wxcorp_users_id', '=', wechat_corp_users_id.id)])[0]
                             login = res_users_id.login
                             if login:
+                                # 更新访问令牌
                                 res_users_id.write({"oauth_access_token": accesstoken})
                                 cr.commit()
+                                # 验证核心函数authenticate：数据库名，登录名，密码或访问令牌
                                 request.session.authenticate(dbname, login, accesstoken)
                                 url = '/web'
                             else:
